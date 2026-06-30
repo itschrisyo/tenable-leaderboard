@@ -4,41 +4,44 @@ A Claude Code SKILL agent that transforms Tenable One exposure data into leaders
 
 ## Overview
 
-This agent connects to Tenable One via API or MCP to generate executive-level exposure management dashboards. It maps assets to business owners through tag analysis, tracks remediation velocity and SLA compliance, identifies systemic risk patterns, and surfaces organizational gaps — all with complete traceability to source data.
+This agent connects to Tenable One via API to generate executive-level exposure management dashboards. It maps assets to business owners through tag analysis, tracks team performance using real Asset Exposure Scores (AES), identifies high-impact quick wins for risk reduction, and surfaces organizational gaps — all with complete traceability to source data.
 
 **Core principle:** Accuracy over completeness. Every metric is verified against live API data. No estimations, no fabrications, no hallucinations.
+
+**Current implementation:** HTML dashboard with dark-luxe design and PowerPoint export capability showing top 10 teams and actionable quick wins.
 
 ## What It Does
 
 ### Executive Summary Layer
-- Organization-wide exposure score with trend analysis
-- SLA compliance rates for Critical/High findings
-- Active risk movers (teams improving vs. teams needing support)
-- Top organizational risks requiring policy attention
+- **Total Assets**: Monitored assets across all teams
+- **Assets With Scores**: Number of assets with real Tenable Asset Exposure Scores
+- **Critical Findings**: Vulnerabilities requiring immediate action
+- **High Severity**: High-priority vulnerabilities
 
-### Ownership Leaderboard
-- Per-owner exposure scores with historical deltas
-- Remediation velocity by severity
-- SLA compliance tracking
-- Performance trend indicators
+### Team Performance Leaderboard (Top 10)
+- **Per-team exposure scores**: Real Asset Exposure Score (AES) from Tenable API (0-1000 scale)
+- **Asset count**: Number of assets per team
+- **Vulnerability breakdown**: Critical, High, and Total vulnerability counts
+- **Performance status**: Color-coded risk indicators (Excellent, Good, Needs Focus, High Risk)
+- **Ranking**: Best performers (lowest exposure) ranked #1
+
+### Quick Wins Section ("If you only have 5 minutes...")
+- **High-impact vulnerabilities**: Vulnerabilities affecting the most assets
+- **Cross-team opportunities**: Vulnerabilities spanning multiple teams
+- **Effort-to-impact ratio**: Maximum risk reduction with minimal remediation effort
+- **Prioritized actions**: Top 5 remediation opportunities ranked by impact
 
 ### Gap Analysis
 - Untagged/unowned assets with exposure context
-- Tagging coverage quality metrics
+- Team identification from OS, Asset Type, Location, and Infrastructure tags
 - Ownership assignment recommendations
-
-### Systemic Risk Detection
-- Clusters of persistent findings across teams
-- Network segments with tagging gaps
-- Organization-wide velocity declines
-- Shared dependency blockers
 
 ## Requirements
 
-- **Tenable One Access**: API credentials or MCP connection
-- **Asset Tagging**: Ownership metadata via tags (`owner:`, `team:`, `bu:`, `department:`)
-- **Historical Data**: Exposure score history for trend analysis
+- **Tenable One Access**: API credentials (Access Key + Secret Key)
+- **Asset Tagging**: Ownership metadata via tags (`OS`, `Assets`, `Locations`, `CIDR Blocks`)
 - **Claude Code**: The SKILL framework for agent execution
+- **Python 3**: For PowerPoint generation (optional)
 
 ## Installation
 
@@ -54,14 +57,22 @@ Copy `tenable-exposure-leaderboard.skill` to your Claude Code skills directory:
 cp tenable-exposure-leaderboard.skill ~/.claude/skills/
 ```
 
-### 3. Configure Tenable One MCP (if using MCP)
-Follow the [Tenable MCP setup guide](https://github.com/tenable/tenable-mcp) to configure your MCP server with appropriate credentials.
+### 3. Configure Tenable One API credentials
+Set your API credentials as environment variables (they will persist across shell sessions):
+```bash
+export TENABLE_ACCESS_KEY="your-access-key"
+export TENABLE_SECRET_KEY="your-secret-key"
+```
 
-Alternatively, ensure your Tenable One API credentials are available for direct API access.
+Add these to your `~/.zshrc` or `~/.bashrc` to make them permanent:
+```bash
+echo 'export TENABLE_ACCESS_KEY="your-access-key"' >> ~/.zshrc
+echo 'export TENABLE_SECRET_KEY="your-secret-key"' >> ~/.zshrc
+```
 
 ## Usage
 
-### Basic Invocation
+### Generate the Dashboard
 From Claude Code CLI or IDE:
 ```
 /tenable-exposure-leaderboard
@@ -69,84 +80,85 @@ From Claude Code CLI or IDE:
 
 The agent will:
 1. Verify Tenable One connectivity
-2. Pull all required data sets (exposures, assets, tags, historical scores, remediation metrics)
-3. Process ownership tags and calculate metrics
-4. Generate the four-layer dashboard
-5. Present results with full source attribution
+2. Export all assets and vulnerabilities via Tenable API
+3. Extract team ownership from asset tags (OS, Asset Type, Infrastructure, Location)
+4. Calculate real Asset Exposure Scores from the API
+5. Identify high-impact quick wins (vulnerabilities affecting multiple assets/teams)
+6. Generate HTML dashboard with dark-luxe design
+7. Open the dashboard in your default browser
 
-### Example Output Structure
-
+### Generate PowerPoint Presentation
+After generating the dashboard data, create an executive presentation:
+```bash
+./generate_pptx.sh
 ```
-═══════════════════════════════════════════════════════════════
-TENABLE EXPOSURE MANAGEMENT DASHBOARD
-Data Retrieved: 2026-06-30 14:23:15 UTC
-Source: Tenable One API v1 | MCP: tenable-lab
-═══════════════════════════════════════════════════════════════
 
-📊 EXECUTIVE SUMMARY
+This creates `Tenable_Exposure_Leaderboard.pptx` with:
+- Title slide
+- Executive summary with key metrics
+- Top 10 team rankings table
+- Quick wins opportunities slide
 
-Organization-wide Exposure Score: 782 ↓ (-14 vs. prior period)
-  → Risk is improving across the organization
-
-Critical/High Findings Remediated Within SLA: 87.3%
-  → 13 of 15 critical findings closed on time this period
-
-Assets with Active Critical Exposures: 42
-  → Down from 58 last period (-27.6%)
-
-Performance Movers:
-  ✅ 12 teams actively reducing risk
-  ⚠️  5 teams need support (stalled or increasing risk)
-
-Top 3 Organizational Risks:
-  1. 127 untagged assets across production network segments
-  2. 8 Critical findings open >60 days across multiple teams (shared dependency)
-  3. Database asset class remediation velocity declined 31% this period
-
-─────────────────────────────────────────────────────────────
-
-📈 OWNERSHIP LEADERBOARD
-[... detailed per-owner metrics table ...]
-```
+### Output Files
+- **`index.html`**: Interactive HTML dashboard with dark theme
+- **`Tenable_Exposure_Leaderboard.pptx`**: Executive PowerPoint presentation
+- **`/tmp/tenable_full_dataset.json`**: Complete raw data from API
+- **`/tmp/leaderboard_top10.json`**: Processed leaderboard data
 
 ## Data Source Attribution
 
-Every metric in the dashboard includes API source citation:
-- Exposure scores → `GET /api/v1/exposures`
-- Asset tags → `GET /api/v1/assets/{uuid}/tags`
-- Remediation velocity → `GET /api/v1/findings/stats`
-- Historical trends → `GET /api/v1/exposures/history`
+Every metric in the dashboard is sourced from Tenable One API:
+- **Asset data**: `POST /assets/export` → `GET /assets/export/{uuid}/chunks/{id}`
+- **Vulnerability data**: `POST /vulns/export` → `GET /vulns/export/{uuid}/chunks/{id}`
+- **Exposure scores**: `exposure_score` field from asset export (0-1000 scale)
+- **Asset tags**: `tags` array from asset export (OS, Assets, Locations, CIDR Blocks)
 
-Unavailable data is explicitly flagged as `[Data Unavailable]` rather than estimated.
+Unavailable data is explicitly shown with fallback calculations rather than estimated.
 
-## Ownership Tag Resolution Logic
+## Team Identification Logic
 
-Assets are mapped to owners via the following tag hierarchy (most specific wins):
+Assets are mapped to teams via the following tag analysis (priority order):
 
-1. `owner:` tags (explicit individual/team assignment)
-2. `team:` tags (team-level ownership)
-3. `bu:` tags (business unit ownership)
-4. `department:` tags (departmental ownership)
+1. **OS tags**: Operating system identifies teams (Windows Team, Linux Team, VMware Team, etc.)
+2. **Asset Type tags**: Asset classification (Servers Team, OT Devices Team, Assets of Interest Team)
+3. **Infrastructure tags**: Network location (Cloud Infrastructure Team, Office Infrastructure Team)
+4. **Location tags**: Geographic/office locations (Regional teams by office location)
 
-Assets with no matching tags are flagged as **Untagged/Unowned** and reported separately as an organizational gap.
+Assets with no matching tags are excluded from team rankings but counted in overall metrics.
 
 ## Output Format
 
-The dashboard is optimized for multiple audiences:
-- **Board/eStaff**: Executive summary with plain-language context
-- **Security Leadership**: Ownership leaderboard with actionable metrics
-- **Operations Teams**: Gap analysis and systemic risk signals
-- **Policy/Governance**: Tagging coverage and organizational patterns
+### HTML Dashboard Features
+- **Dark-luxe aesthetic**: Off-black backgrounds (#0A0A0F), amber accents (#D4A574), clean typography
+- **Interactive elements**: Hover states, exposure score tooltip with AES explanation
+- **Responsive design**: Works on desktop and mobile devices
+- **Real-time data**: All metrics sourced directly from Tenable One API
+- **Accessibility**: Semantic HTML, ARIA labels, keyboard navigation support
 
-All sections use tables for structured data, trend arrows for direction, and severity labels for findings.
+### PowerPoint Presentation
+- **4 slides**: Title, Executive Summary, Team Rankings, Quick Wins
+- **Dark theme**: Matches HTML dashboard aesthetic
+- **Print-ready**: Optimized for executive presentations
+- **Automated generation**: Runs via shell script with Python/python-pptx
 
 ## Design Principles
 
 1. **Accuracy First**: Never fabricate data. If it's not in the API, it's not in the dashboard.
-2. **Source Attribution**: Every metric cites its API endpoint and retrieval timestamp.
-3. **Opportunity Framing**: "Needs Support" not "Failing" — focus on improvement, not blame.
-4. **Gap Visibility**: Surface negative signals (untagged assets, stalled remediations) rather than hiding them.
-5. **Executive Clarity**: Lead with metrics non-technical leaders care about, explain before showing numbers.
+2. **Real Exposure Scores**: Uses actual `exposure_score` field from Tenable API (0-1000 scale), not calculated metrics.
+3. **Source Attribution**: Every metric includes API endpoint and retrieval timestamp.
+4. **Actionable Quick Wins**: Prioritizes high-impact, low-effort remediation opportunities.
+5. **Executive Clarity**: Dark-luxe design optimized for C-suite presentations and board meetings.
+6. **Complete Traceability**: All data points link back to specific API responses with full audit trail.
+
+## Screenshots
+
+### HTML Dashboard
+![HTML Dashboard](https://via.placeholder.com/1200x800?text=Dashboard+Screenshot)
+*Top 10 team leaderboard with real Asset Exposure Scores and quick wins section*
+
+### PowerPoint Presentation
+![PowerPoint Slide](https://via.placeholder.com/1200x800?text=PowerPoint+Screenshot)
+*Executive-ready presentation with dark theme matching the HTML dashboard*
 
 ## Contributing
 
