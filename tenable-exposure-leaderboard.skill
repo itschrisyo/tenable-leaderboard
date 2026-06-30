@@ -11,16 +11,37 @@ Never estimate, infer, or generate placeholder data. If a data point cannot be r
 
 ## Data Retrieval
 
-Connect to the Tenable One API or Tenable One MCP and pull the following data sets:
+Use the Tenable One API with the following workflow:
 
-- All active exposures and findings (ACR, AES, exposure scores)
-- Asset inventory with associated tags
-- Historical exposure scores to calculate risk reduction trends over time
-- Remediation velocity metrics (mean time to remediate by severity)
-- SLA compliance rates per asset group
-- Open vs. closed vulnerability counts by severity tier (Critical, High, Medium, Low)
+### Step 1: Export Vulnerabilities
+POST https://cloud.tenable.com/vulns/export
+- Headers: `X-ApiKeys: accessKey=$TENABLE_ACCESS_KEY; secretKey=$TENABLE_SECRET_KEY`
+- Body: `{"num_assets": 100, "filters": {"severity": ["critical", "high", "medium", "low"]}}`
+- Returns: export_uuid
 
-Authenticate and retrieve live data only. If the connection fails or returns incomplete results, surface that failure clearly rather than proceeding with partial data.
+### Step 2: Export Assets
+POST https://cloud.tenable.com/assets/export
+- Headers: `X-ApiKeys: accessKey=$TENABLE_ACCESS_KEY; secretKey=$TENABLE_SECRET_KEY`
+- Body: `{"chunk_size": 100}`
+- Returns: export_uuid
+
+### Step 3: Check Status and Download Chunks
+GET https://cloud.tenable.com/vulns/export/{uuid}/status
+GET https://cloud.tenable.com/assets/export/{uuid}/status
+- Wait until chunks_available > 0
+- Download each chunk: GET .../export/{uuid}/chunks/{chunk_id}
+
+### Step 4: Process Data
+From vulnerability exports, extract:
+- plugin_id, severity, asset_uuid, first_found, last_found, state
+- Calculate: open vs. closed counts, remediation velocity (last_found - first_found)
+- Group by: severity, asset_uuid
+
+From asset exports, extract:
+- id, ipv4, fqdn, tags (key/value pairs), has_agent, operating_system
+- Parse tags for ownership: look for owner:, team:, bu:, department: keys
+
+Authenticate using environment variables $TENABLE_ACCESS_KEY and $TENABLE_SECRET_KEY. If the connection fails or returns incomplete results, surface that failure clearly rather than proceeding with partial data.
 
 ## Ownership Identification via Tags
 

@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exposure Management Leaderboard | Tenable One</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --off-black: #0A0A0F;
+            --surface-1: #131318;
+            --surface-2: #1A1A20;
+            --surface-3: #222228;
+            --text-primary: #F5F5F7;
+            --text-secondary: #A0A0AB;
+            --text-tertiary: #707078;
+            --accent: #D4A574;
+            --accent-dim: #8B7355;
+            --border: rgba(255,255,255,0.08);
+            --success: #4CAF50;
+            --warning: #FF9800;
+            --critical: #F44336;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--off-black);
+            color: var(--text-primary);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+        
+        .header {
+            margin-bottom: 4rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 300;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.75rem;
+            color: var(--text-primary);
+        }
+        
+        .header-meta {
+            display: flex;
+            gap: 3rem;
+            font-size: 0.875rem;
+            color: var(--text-tertiary);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 4rem;
+        }
+        
+        .stat-card {
+            background: var(--surface-1);
+            border: 1px solid var(--border);
+            padding: 2rem;
+            transition: border-color 0.3s;
+        }
+        
+        .stat-card:hover {
+            border-color: var(--accent-dim);
+        }
+        
+        .stat-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-tertiary);
+            margin-bottom: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 300;
+            color: var(--text-primary);
+            line-height: 1;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-detail {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+        
+        .leaderboard-section {
+            background: var(--surface-1);
+            border: 1px solid var(--border);
+            overflow: hidden;
+            margin-bottom: 4rem;
+        }
+        
+        .section-header {
+            padding: 2rem;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 400;
+            letter-spacing: -0.01em;
+        }
+        
+        .leaderboard-header {
+            display: grid;
+            grid-template-columns: 80px 2.5fr 120px 120px 120px 120px 180px 140px;
+            gap: 2rem;
+            padding: 1.5rem 2rem;
+            background: var(--surface-2);
+            border-bottom: 1px solid var(--border);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-tertiary);
+            font-weight: 500;
+        }
+        
+        .leaderboard-row {
+            display: grid;
+            grid-template-columns: 80px 2.5fr 120px 120px 120px 120px 180px 140px;
+            gap: 2rem;
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border);
+            align-items: center;
+            transition: background 0.2s;
+        }
+        
+        .leaderboard-row:hover {
+            background: var(--surface-2);
+        }
+        
+        .rank {
+            font-size: 1.5rem;
+            font-weight: 300;
+            color: var(--text-tertiary);
+            text-align: center;
+        }
+        
+        .rank.top { color: var(--accent); font-weight: 500; }
+        
+        .team-name {
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        
+        .team-type {
+            font-size: 0.75rem;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 0.25rem;
+        }
+        
+        .metric {
+            text-align: center;
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-align: center;
+        }
+        
+        .badge-critical { background: rgba(244,67,54,0.15); color: var(--critical); border: 1px solid rgba(244,67,54,0.3); }
+        .badge-high { background: rgba(255,152,0,0.15); color: var(--warning); border: 1px solid rgba(255,152,0,0.3); }
+        
+        .exposure-score {
+            text-align: center;
+        }
+        
+        .score-value {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .score-label {
+            font-size: 0.65rem;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-top: 0.25rem;
+        }
+        
+        .trend {
+            padding: 0.5rem 1rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            text-align: center;
+            border-radius: 4px;
+        }
+        
+        .trend-excellent { background: rgba(76,175,80,0.15); color: var(--success); border: 1px solid rgba(76,175,80,0.3); }
+        .trend-good { background: rgba(76,175,80,0.1); color: #81C784; border: 1px solid rgba(76,175,80,0.2); }
+        .trend-needs_improvement { background: rgba(255,152,0,0.15); color: var(--warning); border: 1px solid rgba(255,152,0,0.3); }
+        .trend-critical { background: rgba(244,67,54,0.15); color: var(--critical); border: 1px solid rgba(244,67,54,0.3); }
+
+        .info-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 14px;
+            height: 14px;
+            margin-left: 6px;
+            border: 1px solid var(--text-tertiary);
+            border-radius: 50%;
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            cursor: help;
+            position: relative;
+        }
+
+        .info-icon:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .tooltip {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--surface-3);
+            border: 1px solid var(--accent-dim);
+            padding: 1.5rem;
+            border-radius: 8px;
+            width: 380px;
+            font-size: 0.875rem;
+            line-height: 1.6;
+            color: var(--text-secondary);
+            font-weight: 400;
+            text-transform: none;
+            letter-spacing: normal;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            z-index: 10000;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+        }
+
+        .info-icon:hover .tooltip {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .quick-wins-section {
+            background: linear-gradient(135deg, rgba(212,165,116,0.08) 0%, rgba(212,165,116,0.02) 100%);
+            border: 1px solid var(--accent-dim);
+            padding: 2rem;
+            margin-bottom: 4rem;
+            border-radius: 2px;
+        }
+
+        .quick-wins-header {
+            display: flex;
+            align-items: baseline;
+            gap: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .quick-wins-title {
+            font-size: 1.75rem;
+            font-weight: 400;
+            letter-spacing: -0.01em;
+            color: var(--text-primary);
+        }
+
+        .quick-wins-subtitle {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+        }
+
+        .quick-wins-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .quick-win-card {
+            background: var(--surface-1);
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            transition: border-color 0.3s, transform 0.3s;
+        }
+
+        .quick-win-card:hover {
+            border-color: var(--accent-dim);
+            transform: translateY(-2px);
+        }
+
+        .quick-win-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .quick-win-rank {
+            font-size: 2rem;
+            font-weight: 300;
+            color: var(--accent);
+        }
+
+        .quick-win-severity {
+            padding: 0.25rem 0.75rem;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .quick-win-severity.critical {
+            background: rgba(244,67,54,0.15);
+            color: var(--critical);
+            border: 1px solid rgba(244,67,54,0.3);
+        }
+
+        .quick-win-severity.high {
+            background: rgba(255,152,0,0.15);
+            color: var(--warning);
+            border: 1px solid rgba(255,152,0,0.3);
+        }
+
+        .quick-win-name {
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            line-height: 1.4;
+            margin-bottom: 1rem;
+        }
+
+        .quick-win-impact {
+            display: flex;
+            gap: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+            font-size: 0.875rem;
+        }
+
+        .quick-win-metric {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .quick-win-metric-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            line-height: 1;
+        }
+
+        .quick-win-metric-label {
+            font-size: 0.75rem;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 0.25rem;
+        }
+        
+        .footer {
+            margin-top: 4rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            color: var(--text-tertiary);
+            font-size: 0.875rem;
+        }
+        
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1rem;
+        }
+        
+        .footer-link {
+            color: var(--accent);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .footer-link:hover {
+            color: var(--text-primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Tenable Exposure Management Leaderboard</h1>
+            <div class="header-meta">
+                <div>Generated June 30, 2026 at 16:16 UTC</div>
+                <div>Tenable One API</div>
+                <div>10 Teams · 4,900 Assets</div>
+            </div>
+        </header>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Total Assets</div>
+                <div class="stat-value">4,900</div>
+                <div class="stat-detail">Across 10 top teams</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-label">Assets With Scores</div>
+                <div class="stat-value">155</div>
+                <div class="stat-detail">Real Tenable exposure scores</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-label">Critical Findings</div>
+                <div class="stat-value" style="color: var(--critical);">1,699</div>
+                <div class="stat-detail">Require immediate action</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-label">High Severity</div>
+                <div class="stat-value" style="color: var(--warning);">5,757</div>
+                <div class="stat-detail">High-priority vulnerabilities</div>
+            </div>
+        </div>
+        
+        <section class="leaderboard-section">
+            <div class="section-header">
+                <h2 class="section-title">Team Performance Rankings (Top 10)</h2>
+            </div>
+            
+            <div class="leaderboard-header">
+                <div>Rank</div>
+                <div>Team</div>
+                <div style="text-align: center;">Assets</div>
+                <div style="text-align: center;">Critical</div>
+                <div style="text-align: center;">High</div>
+                <div style="text-align: center;">Total Vulns</div>
+                <div style="text-align: center; display: flex; align-items: center; justify-content: center;">
+                    Exposure Score
+                    <span class="info-icon">i
+                        <span class="tooltip">
+                            <strong>Asset Exposure Score (AES)</strong><br><br>
+                            Tenable Exposure Management calculates a dynamic AES for each asset to represent the asset's relative exposure as an integer between 0 and 1000. A higher AES indicates higher exposure.<br><br>
+                            This leaderboard shows the average AES across all assets in each team, with lower scores indicating better security posture.
+                        </span>
+                    </span>
+                </div>
+                <div style="text-align: center;">Status</div>
+            </div>
+            <div class="leaderboard-row">
+                <div class="rank top">#1</div>
+                <div>
+                    <div class="team-name">Huawei Team</div>
+                    <div class="team-type">OS</div>
+                </div>
+                <div class="metric">1</div>
+                <div style="text-align: center;">
+                    <span class="badge badge-critical">0</span>
+                </div>
+                <div style="text-align: center;">
+                    <span class="badge badge-high">0</span>
+                </div>
+                <div class="metric">0</div>
+                <div class="exposure-score">
+                    <div class="score-value">35.0</div>
+                    <div class="score-label">Real</div>
+                </div>
+                <div style="text-align: center;">
+                    <div class="trend trend-good">Good</div>
+                </div>
+            </div>
+            <div class="leaderboard-row">
+                <div class="rank top">#2</div>
+                <div>
+                    <div class="team-name">EulerOS Team</div>
+                    <div class="team-type">OS</div>
+                </div>
+                <div class="metric">1</div>
+                <div style="text-align: center;">
+                    <span class="badge badge-critical">0</span>
+                </div>
+                <div style="text-align: center;">
+                    <span class="badge badge-high">0</span>
+                </div>
+                <div class="metric">0</div>
+                <div class="exposure-score">
+                    <div class="score-value">35.0</div>
+                    <div class="score-label">Real</div>
+                </div>
+                <div style="text-align: center;">
+                    <div class="trend trend-good">Good</div>
+                </div>
+            </div>
+            <div class="leaderboard-row">
+                <div class="rank top">#3</div>
+                <div>
+                    <div class="team-name">IBM Team</div>
+                    <div class="team-type">OS</div>
+                </div>
+                <div class="metric">1</div>
+                <div style="text-align: center;">
+                    <span class="badge badge-critical">0</span>
+                </div>
+                <div style="text-align: center;">
+                    <span class="badge badge-high">0</span>
+                </div>
+                <div class="metric">0</div>
+                <div class="exposure-score">
+                    <div class="score-value">37.0</div>
+                    <div class="score-label">Real</div>
+                </div>
+                <div style="text-align: center;">
+                    <div class="trend trend-good">Good</div>
+                </div>
+            </div>
+            <div class="leaderboard-row">
+                <div class="rank ">#4</div>
+                <div>
+                    <div class="team-name">OT Devices Team</div>
+                    <div class="team-type">Asset Type</div>
+                </div>
+                <div class="metric">30</div>
+                <div style="text-align: center;">
+                    <span class="badge badge-critical">6</span>
+                </div>
+                <div style="text-align: center;">
+                    <span class="badge badge-high">17</span>
+                </div>
+                <div class="metric">23</div>
+                <div class="exposure-score">
+                    <div class="score-value">44.6</div>
+                    <div class="score-label">Real</div>
+                </div>
+                <div style="text-align: center;">
+                    <div class="trend trend-good">Good</div>
+                </div>
+            </div>
+            <div class="leaderboard-row">
+                <div class="rank ">#5</div>
+                <div>
+                    <div class="team-name">Cloud Infrastructure Team</div>
+                    <div class="team-type">Infrastructure</div>
+                </div>
+                <div class="metric">28</div>
+                <div style="text-align: center;">
+                    <span class="badge badge-critical">19</span>
+                </div>
+                <div style="text-align: center;">
+                    <span class="badge badge-high">44</span>
+                </div>
+                <div class="metric">63</div>
+                <div class="exposure-score">
+                    <div class="score-value">108.7</div>
+                    <div class="score-label">Real</div>
+                </div>
+                <div style="text-align: center;">
+                    <div class="trend trend-needs_improvement">Needs Focus</div>
+                </div>
+            </div>
+            <div class="leaderboard-row">
+                <div class="rank ">#6</div>
+                <div>
+                    <div class="team-name">Kali Team</div>
+                    <div class="team-type">OS</div>
+                </div>
+                <div class="metric">1</div>
+                <div style="text-align: center;">
+                    <span class="badge badge-critical">0</span>
+                </div>
+                <div style="text-align: center;">
+                    <span class="badge badge-high">1</span>
+                </div>
+                <div class="metric">1</div>
+                <div class="exposure-score">
+                    <div class="score-value">114.0</div>
+                    <div class="score-label">Real</div>
+                </div>
+                <div style="text-align: center;">
+                    <div class="trend trend-needs_improvement">Needs Focus</div>
+                </div>
+            </div>
+            <div class="leaderboard-row">
+                <div class="rank ">#7</div>
+                <div>
+                    <div class="team-name">Juniper Team</div>
+                    <div class="team-type">OS</div>
+                </div>
+                <div class="metric">1</div>
+                <div style="text-align: center;">
+                    <span class="badge badge-critical">0</span>
+                </div>
+                <div style="text-align: center;">
+                    <span class="badge badge-high">0</span>
+                </div>
+                <div class="metric">0</div>
+                <div class="exposure-score">
+                    <div class="score-value">145.0</div>
+                    <div class="score-label">Real</div>
+                </div>
+                <div style="text-align: center;">
+                    <div class="trend trend-needs_improvement">Needs Focus</div>
+                </div>
+            </div>
+            <div class="leaderboard-row">
+                <div class="rank ">#8</div>
+                <div>
+                    <div class="team-name">Assets of Interest Team</div>
+                    <div class="team-type">Asset Type</div>
+                </div>
+                <div class="metric">6</div>
+                <div style="text-align: center;">
+                    <span class="badge badge-critical">0</span>
+                </div>
+                <div style="text-align: center;">
+                    <span class="badge badge-high">0</span>
+                </div>
+                <div class="metric">0</div>
+                <div class="exposure-score">
+                    <div class="score-value">214.7</div>
+                    <div class="score-label">Real</div>
+                </div>
+                <div style="text-align: center;">
+                    <div class="trend trend-needs_improvement">Needs Focus</div>
+                </div>
+            </div>
+            <div class="leaderboard-row">
+                <div class="rank ">#9</div>
+                <div>
+                    <div class="team-name">Linux Team</div>
+                    <div class="team-type">OS</div>
+                </div>
+                <div class="metric">57</div>
+                <div style="text-align: center;">
+                    <span class="badge badge-critical">729</span>
+                </div>
+                <div style="text-align: center;">
+                    <span class="badge badge-high">3047</span>
+                </div>
+                <div class="metric">3,776</div>
+                <div class="exposure-score">
+                    <div class="score-value">347.0</div>
+                    <div class="score-label">Real</div>
+                </div>
+                <div style="text-align: center;">
+                    <div class="trend trend-critical">High Risk</div>
+                </div>
+            </div>
+            <div class="leaderboard-row">
+                <div class="rank ">#10</div>
+                <div>
+                    <div class="team-name">Fortinet Team</div>
+                    <div class="team-type">OS</div>
+                </div>
+                <div class="metric">1</div>
+                <div style="text-align: center;">
+                    <span class="badge badge-critical">1</span>
+                </div>
+                <div style="text-align: center;">
+                    <span class="badge badge-high">3</span>
+                </div>
+                <div class="metric">4</div>
+                <div class="exposure-score">
+                    <div class="score-value">521.0</div>
+                    <div class="score-label">Real</div>
+                </div>
+                <div style="text-align: center;">
+                    <div class="trend trend-critical">High Risk</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="quick-wins-section">
+            <div class="quick-wins-header">
+                <h2 class="quick-wins-title">If you only have 5 minutes...</h2>
+            </div>
+            <p class="quick-wins-subtitle">Focus on these high-impact vulnerabilities to meaningfully reduce risk across multiple teams with minimal effort.</p>
+
+            <div class="quick-wins-grid">
+                <div class="quick-win-card">
+                    <div class="quick-win-header">
+                        <div class="quick-win-rank">#1</div>
+                        <div class="quick-win-severity high">High</div>
+                    </div>
+                    <div class="quick-win-name">SSL Medium Strength Cipher Suites Supported (SWEET32)</div>
+                    <div class="quick-win-impact">
+                        <div class="quick-win-metric">
+                            <div class="quick-win-metric-value">26</div>
+                            <div class="quick-win-metric-label">Assets</div>
+                        </div>
+                        <div class="quick-win-metric">
+                            <div class="quick-win-metric-value">3</div>
+                            <div class="quick-win-metric-label">Teams</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="quick-win-card">
+                    <div class="quick-win-header">
+                        <div class="quick-win-rank">#2</div>
+                        <div class="quick-win-severity high">High</div>
+                    </div>
+                    <div class="quick-win-name">WinVerifyTrust Signature Validation CVE-2013-3900 Mitigation</div>
+                    <div class="quick-win-impact">
+                        <div class="quick-win-metric">
+                            <div class="quick-win-metric-value">20</div>
+                            <div class="quick-win-metric-label">Assets</div>
+                        </div>
+                        <div class="quick-win-metric">
+                            <div class="quick-win-metric-value">1</div>
+                            <div class="quick-win-metric-label">Team</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="quick-win-card">
+                    <div class="quick-win-header">
+                        <div class="quick-win-rank">#3</div>
+                        <div class="quick-win-severity critical">Critical</div>
+                    </div>
+                    <div class="quick-win-name">OpenSSH < 9.3p2 Vulnerability</div>
+                    <div class="quick-win-impact">
+                        <div class="quick-win-metric">
+                            <div class="quick-win-metric-value">11</div>
+                            <div class="quick-win-metric-label">Assets</div>
+                        </div>
+                        <div class="quick-win-metric">
+                            <div class="quick-win-metric-value">4</div>
+                            <div class="quick-win-metric-label">Teams</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="quick-win-card">
+                    <div class="quick-win-header">
+                        <div class="quick-win-rank">#4</div>
+                        <div class="quick-win-severity high">High</div>
+                    </div>
+                    <div class="quick-win-name">Microsoft .NET Framework Security Updates (August 2023)</div>
+                    <div class="quick-win-impact">
+                        <div class="quick-win-metric">
+                            <div class="quick-win-metric-value">10</div>
+                            <div class="quick-win-metric-label">Assets</div>
+                        </div>
+                        <div class="quick-win-metric">
+                            <div class="quick-win-metric-value">1</div>
+                            <div class="quick-win-metric-label">Team</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="quick-win-card">
+                    <div class="quick-win-header">
+                        <div class="quick-win-rank">#5</div>
+                        <div class="quick-win-severity critical">Critical</div>
+                    </div>
+                    <div class="quick-win-name">Microsoft .NET Framework Security Updates (January 2024)</div>
+                    <div class="quick-win-impact">
+                        <div class="quick-win-metric">
+                            <div class="quick-win-metric-value">10</div>
+                            <div class="quick-win-metric-label">Assets</div>
+                        </div>
+                        <div class="quick-win-metric">
+                            <div class="quick-win-metric-value">1</div>
+                            <div class="quick-win-metric-label">Team</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <footer class="footer">
+            <p>Tenable Exposure Management Leaderboard Agent v1.0</p>
+            <div class="footer-links">
+                <a href="https://github.com/itschrisyo/tenable-leaderboard" class="footer-link">GitHub</a>
+                <a href="https://developer.tenable.com" class="footer-link">Developer Portal</a>
+            </div>
+            <p style="margin-top: 1rem; font-size: 0.75rem;">Powered by Tenable One | Real exposure scores from API</p>
+        </footer>
+    </div>
+</body>
+</html>

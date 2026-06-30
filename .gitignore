@@ -52,5 +52,11 @@ tmp/
 temp/
 *.tmp
 
+# Test outputs - don't commit generated dashboards
+dashboard_live.html
+dashboard_output.txt
+test_agent.py
+/tmp/tagged_assets.json
+
 # Cache
 .cache/
